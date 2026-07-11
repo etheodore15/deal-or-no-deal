@@ -18,6 +18,9 @@
 
 * { box-sizing: border-box; }
 
+/* Elements styled with display:flex/grid still respect the hidden attribute */
+[hidden] { display: none !important; }
+
 html, body {
   margin: 0;
   padding: 0;
@@ -55,6 +58,20 @@ button { font: inherit; cursor: pointer; }
 .topbar-actions { display: flex; align-items: center; gap: 8px; }
 
 .round-indicator { color: var(--gold-2); font-size: 13px; font-weight: 600; }
+
+.scoreboard {
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: var(--bg-panel);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 6px 12px;
+  white-space: nowrap;
+}
+.scoreboard .you { color: var(--green); }
+.scoreboard .bank { color: var(--red); }
+.scoreboard .amt { color: var(--text-dim); font-weight: 600; }
 
 /* ---------- Buttons ---------- */
 
@@ -281,6 +298,7 @@ button.case:disabled { cursor: default; }
 /* ---------- Advisor panel ---------- */
 
 .risk-row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.risk-row-modal { max-width: 300px; margin: 0 auto 16px; }
 
 .risk-toggle {
   display: grid;
@@ -341,8 +359,6 @@ button.case:disabled { cursor: default; }
   z-index: 50;
   padding: 20px;
 }
-.modal-backdrop[hidden] { display: none; }
-
 .modal {
   background: var(--bg-panel);
   border: 1px solid var(--line);

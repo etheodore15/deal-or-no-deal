@@ -1,6 +1,6 @@
 /* Service worker — precache everything; the game is fully offline. */
 
-const CACHE = 'dond-v1';
+const CACHE = 'dond-v2';
 const ASSETS = [
   '.',
   'index.html',
