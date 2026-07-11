@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Deal or No Deal AU — with Advisor</title>
+  <meta name="description" content="Play Deal or No Deal (Australian format, 50c–$100,000) with a built-in statistical advisor that tells you when to take the Banker's offer.">
+  <meta name="theme-color" content="#0b0f1e">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-case">💼</span>
+      <h1>Deal <em>or</em> No Deal</h1>
+      <span class="brand-sub">AU · 50¢ – $100,000</span>
+    </div>
+    <div class="topbar-actions">
+      <span id="round-indicator" class="round-indicator"></span>
+      <button id="btn-install" class="btn btn-ghost" hidden>Install app</button>
+      <button id="btn-stats" class="btn btn-ghost">Stats</button>
+      <button id="btn-new-game" class="btn btn-outline">New game</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- Money board -->
+    <aside class="board" aria-label="Money board">
+      <h2 class="panel-title">The Board</h2>
+      <div class="board-columns">
+        <ul id="board-low" class="board-col"></ul>
+        <ul id="board-high" class="board-col board-col-high"></ul>
+      </div>
+      <div class="board-ev">
+        <span class="label">Board average (EV)</span>
+        <span id="board-ev-value" class="value"></span>
+      </div>
+    </aside>
+
+    <!-- Stage: message, player case, case grid -->
+    <section class="stage">
+      <div id="message" class="message" role="status"></div>
+
+      <div id="player-case-slot" class="player-case-slot" hidden>
+        <span class="label">Your case</span>
+        <div id="player-case" class="case case-player"></div>
+      </div>
+
+      <div id="case-grid" class="case-grid" aria-label="Briefcases"></div>
+
+      <div id="offer-history" class="offer-history" hidden>
+        <span class="label">Banker's offers</span>
+        <ol id="offer-history-list"></ol>
+      </div>
+    </section>
+
+    <!-- Advisor -->
+    <aside class="advisor" aria-label="Advisor">
+      <h2 class="panel-title">🎓 The Advisor</h2>
+      <div class="risk-row">
+        <span class="label">Risk appetite</span>
+        <div id="risk-toggle" class="risk-toggle" role="radiogroup" aria-label="Risk appetite">
+          <button data-risk="cautious" role="radio">Cautious</button>
+          <button data-risk="balanced" role="radio" class="active">Balanced</button>
+          <button data-risk="bold" role="radio">Bold</button>
+        </div>
+      </div>
+      <div id="advisor-body" class="advisor-body">
+        <p class="advisor-idle">Start a game and I’ll crunch the numbers for you.</p>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Banker offer modal -->
+  <div id="offer-modal" class="modal-backdrop" hidden>
+    <div class="modal offer-modal" role="dialog" aria-modal="true" aria-labelledby="offer-title">
+      <div class="banker-phone">📞</div>
+      <h2 id="offer-title">The Banker offers</h2>
+      <div id="offer-amount" class="offer-amount"></div>
+      <div id="offer-advice" class="offer-advice"></div>
+      <div class="modal-actions">
+        <button id="btn-deal" class="btn btn-deal">DEAL</button>
+        <button id="btn-no-deal" class="btn btn-no-deal">NO DEAL</button>
+      </div>
+      <button id="btn-offer-details" class="btn btn-ghost btn-small">Show the Advisor’s working ▾</button>
+      <div id="offer-details" class="offer-details" hidden></div>
+    </div>
+  </div>
+
+  <!-- Case reveal modal -->
+  <div id="reveal-modal" class="modal-backdrop" hidden>
+    <div class="modal reveal-modal">
+      <div id="reveal-case-label" class="reveal-case-label"></div>
+      <div id="reveal-amount" class="reveal-amount"></div>
+    </div>
+  </div>
+
+  <!-- Swap (finale) modal -->
+  <div id="swap-modal" class="modal-backdrop" hidden>
+    <div class="modal" role="dialog" aria-modal="true">
+      <h2>Two cases left</h2>
+      <p id="swap-text"></p>
+      <p class="swap-note">Advisor: swapping is a pure coin flip here — unlike Monty Hall, no one
+        opened cases with knowledge of what’s inside. Either choice has identical odds.</p>
+      <div class="modal-actions">
+        <button id="btn-keep" class="btn btn-deal">Keep my case</button>
+        <button id="btn-swap" class="btn btn-no-deal">Swap cases</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- End of game modal -->
+  <div id="end-modal" class="modal-backdrop" hidden>
+    <div class="modal end-modal" role="dialog" aria-modal="true">
+      <h2 id="end-title"></h2>
+      <div id="end-amount" class="offer-amount"></div>
+      <div id="end-summary" class="end-summary"></div>
+      <div class="modal-actions">
+        <button id="btn-play-again" class="btn btn-deal">Play again</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats modal -->
+  <div id="stats-modal" class="modal-backdrop" hidden>
+    <div class="modal" role="dialog" aria-modal="true">
+      <h2>Your record</h2>
+      <div id="stats-body" class="end-summary"></div>
+      <div class="modal-actions">
+        <button id="btn-close-stats" class="btn btn-outline">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/ui.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
+    }
+  </script>
+</body>
+</html>
