@@ -25,15 +25,22 @@ import {
   shuffle,
 } from './game.js';
 
+/**
+ * Risk profiles are deliberately spread wide so the dial visibly changes
+ * the advice: a cautious player (rho=0.3) discounts long shots hard and
+ * gets told to DEAL rounds earlier; a bold player (rho=1.15) is mildly
+ * risk-seeking — a coin flip on $100k excites them more than $50k sure —
+ * and gets told to hold out for near-full-value offers.
+ */
 export const RISK_PROFILES = {
-  cautious: { rho: 0.35, label: 'Cautious' },
+  cautious: { rho: 0.3, label: 'Cautious' },
   balanced: { rho: 0.6, label: 'Balanced' },
-  bold: { rho: 1.0, label: 'Bold' },
+  bold: { rho: 1.15, label: 'Bold' },
 };
 
 /** Certainty equivalent of a uniform gamble over `values` under u(x)=x^rho. */
 export function certaintyEquivalent(values, rho) {
-  if (rho >= 0.999) return expectedValue(values);
+  if (Math.abs(rho - 1) < 0.001) return expectedValue(values);
   const eu = values.reduce((s, v) => s + Math.pow(v, rho), 0) / values.length;
   return Math.pow(eu, 1 / rho);
 }
@@ -140,7 +147,7 @@ export function adviseOnOffer(game, riskKey = 'balanced', sims = 3000) {
   const noDealValue = sim.ceContinue;
   const deal = dealValue >= noDealValue;
   const margin = Math.abs(dealValue - noDealValue) / Math.max(dealValue, noDealValue, 1);
-  const confidence = Math.round(Math.min(0.99, 0.5 + margin * 1.8) * 100);
+  const confidence = Math.round(50 + 47 * Math.tanh(margin * 2.2));
 
   return {
     verdict: deal ? 'DEAL' : 'NO DEAL',

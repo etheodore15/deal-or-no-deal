@@ -29,6 +29,7 @@ export const GamePhase = {
 };
 
 export function formatMoney(v) {
+  if (v === 0) return '$0';
   if (v < 1) return `${Math.round(v * 100)}¢`;
   const opts = Number.isInteger(v)
     ? { maximumFractionDigits: 0 }

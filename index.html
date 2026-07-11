@@ -19,6 +19,7 @@
       <span class="brand-sub">AU · 50¢ – $100,000</span>
     </div>
     <div class="topbar-actions">
+      <span id="scoreboard" class="scoreboard" title="Games won — you vs the Banker, with what you banked either way"></span>
       <span id="round-indicator" class="round-indicator"></span>
       <button id="btn-install" class="btn btn-ghost" hidden>Install app</button>
       <button id="btn-stats" class="btn btn-ghost">Stats</button>
@@ -81,6 +82,14 @@
       <h2 id="offer-title">The Banker offers</h2>
       <div id="offer-amount" class="offer-amount"></div>
       <div id="offer-advice" class="offer-advice"></div>
+      <div class="risk-row risk-row-modal">
+        <span class="label">Risk appetite</span>
+        <div id="offer-risk-toggle" class="risk-toggle" role="radiogroup" aria-label="Risk appetite">
+          <button data-risk="cautious" role="radio">Cautious</button>
+          <button data-risk="balanced" role="radio" class="active">Balanced</button>
+          <button data-risk="bold" role="radio">Bold</button>
+        </div>
+      </div>
       <div class="modal-actions">
         <button id="btn-deal" class="btn btn-deal">DEAL</button>
         <button id="btn-no-deal" class="btn btn-no-deal">NO DEAL</button>

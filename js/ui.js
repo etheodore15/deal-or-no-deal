@@ -60,10 +60,50 @@ function saveGameResult(result) {
     winnings: result.winnings,
     caseValue: result.playerCaseValue,
     dealt: result.dealt,
+    bestOffer: result.bestOffer,
     followedAdvisor: result.followedAdvisor,
     when: Date.now(),
   });
   localStorage.setItem(STATS_KEY, JSON.stringify(stats));
+}
+
+/**
+ * Who won the game? If you dealt, you beat the Banker when the offer you
+ * took exceeds what your case held. If you refused every deal, you beat
+ * the Banker when your winnings match or top the best offer you knocked
+ * back — otherwise the Banker's lowballing paid off.
+ */
+function playerWonGame(g) {
+  return g.dealt ? g.winnings > g.caseValue : g.winnings >= (g.bestOffer || 0);
+}
+
+function tallyScore(games) {
+  const score = { youWins: 0, youTotal: 0, bankWins: 0, bankTotal: 0 };
+  for (const g of games) {
+    if (playerWonGame(g)) {
+      score.youWins++;
+      score.youTotal += g.winnings;
+    } else {
+      score.bankWins++;
+      score.bankTotal += g.winnings;
+    }
+  }
+  return score;
+}
+
+function renderScoreboard() {
+  const el = $('scoreboard');
+  const { games } = loadStats();
+  if (games.length === 0) {
+    el.textContent = '';
+    el.hidden = true;
+    return;
+  }
+  const s = tallyScore(games);
+  el.hidden = false;
+  el.innerHTML =
+    `<span class="you">You ${s.youWins}</span> <span class="amt">(${formatMoney(s.youTotal)})</span>` +
+    ` · <span class="bank">Bank ${s.bankWins}</span> <span class="amt">(${formatMoney(s.bankTotal)})</span>`;
 }
 
 /* ---------- Rendering ---------- */
@@ -225,7 +265,7 @@ function renderAdvisorForOffer() {
       ${statItem('Board EV', formatMoney(Math.round(a.ev)))}
       ${statItem('Offer as % of EV', pct(a.offerPctOfEV), a.offerPctOfEV >= 1 ? 'good' : '')}
       ${statItem('Risk-adjusted value of the board', formatMoney(Math.round(a.ceBoard)))}
-      ${statItem('Playing on is worth (risk-adj.)', formatMoney(Math.round(a.ceContinue)), a.ceContinue > a.offer ? 'good' : 'bad')}
+      ${statItem(`Deal threshold (${RISK_PROFILES[riskKey].label.toLowerCase()})`, `≥ ${formatMoney(Math.round(a.ceContinue))}`, a.ceContinue > a.offer ? 'good' : 'bad')}
       ${statItem('Playing on is worth (raw EV)', formatMoney(Math.round(a.evContinue)))}
       ${statItem('Chance next offer beats this', pct(a.pNextOfferBetter), a.pNextOfferBetter >= 0.5 ? 'good' : 'bad')}
       ${statItem('Chance your case beats this offer', pct(a.pFinalCaseBeatsOffer))}
@@ -238,7 +278,7 @@ function renderAdvisorForOffer() {
   els.advisorBody.innerHTML = summary + stats;
 
   // Mirror the verdict into the offer modal.
-  els.offerAdvice.innerHTML = `🎓 Advisor says
+  els.offerAdvice.innerHTML = `🎓 Advisor (${RISK_PROFILES[riskKey].label.toLowerCase()}) says
     <span class="${verdictColor(a.verdict)}">${a.verdict}</span> —
     ${a.verdict === 'DEAL'
       ? `this offer beats the risk-adjusted ${formatMoney(Math.round(a.ceContinue))} you’d expect from playing on.`
@@ -268,6 +308,7 @@ function showOfferModal() {
 
 function endGame(result, followedAdvisor) {
   result.followedAdvisor = followedAdvisor;
+  result.bestOffer = Math.max(...game.offerHistory, 0);
   saveGameResult(result);
 
   const { winnings, playerCaseValue, dealt, swapped } = result;
@@ -290,16 +331,29 @@ function endGame(result, followedAdvisor) {
         ? `Your original case had <strong>${formatMoney(playerCaseValue)}</strong> — the swap cost you.`
         : `Your original case had <strong>${formatMoney(playerCaseValue)}</strong> — good swap!`);
     }
-    const bestOffer = Math.max(...game.offerHistory, 0);
-    if (bestOffer > winnings) {
-      lines.push(`The best offer you turned down was <strong>${formatMoney(bestOffer)}</strong>.`);
+    if (result.bestOffer > winnings) {
+      lines.push(`The best offer you turned down was <strong>${formatMoney(result.bestOffer)}</strong>.`);
     } else {
       lines.push(`You beat every offer the Banker made. 🎉`);
     }
   }
+
+  const youWon = playerWonGame({
+    winnings,
+    caseValue: playerCaseValue,
+    dealt,
+    bestOffer: result.bestOffer,
+  });
+  const s = tallyScore(loadStats().games);
+  lines.push(
+    (youWon ? '🏆 <strong>This one goes to you.</strong>' : '🏦 <strong>This one goes to the Banker.</strong>') +
+    ` Running tally: you ${s.youWins} (${formatMoney(s.youTotal)}) — Bank ${s.bankWins} (${formatMoney(s.bankTotal)}).`
+  );
+
   els.endSummary.innerHTML = `<p>${lines.join('</p><p>')}</p>`;
   els.endModal.hidden = false;
 
+  renderScoreboard();
   renderAll();
 }
 
@@ -376,6 +430,7 @@ function newGame() {
   renderAll();
   renderOfferHistory();
   renderAdvisorForPicking();
+  renderScoreboard();
 }
 
 /* ---------- Stats ---------- */
@@ -389,15 +444,22 @@ function showStats() {
     const best = Math.max(...games.map((g) => g.winnings));
     const deals = games.filter((g) => g.dealt).length;
     const beatCase = games.filter((g) => g.dealt && g.winnings > g.caseValue).length;
+    const s = tallyScore(games);
     els.statsBody.innerHTML = `
       <ul class="stat-list">
+        ${statItem('You beat the Banker', `${s.youWins} game${s.youWins === 1 ? '' : 's'}`, 'good')}
+        ${statItem('…banking a total of', formatMoney(s.youTotal), 'good')}
+        ${statItem('The Banker beat you', `${s.bankWins} game${s.bankWins === 1 ? '' : 's'}`, s.bankWins ? 'bad' : '')}
+        ${statItem('…where you only banked', formatMoney(s.bankTotal), s.bankWins ? 'bad' : '')}
         ${statItem('Games played', games.length)}
         ${statItem('Total winnings', formatMoney(total))}
         ${statItem('Average winnings', formatMoney(Math.round(total / games.length)))}
         ${statItem('Best game', formatMoney(best))}
         ${statItem('Deals taken', `${deals} of ${games.length}`)}
         ${statItem('Deals that beat your case', deals ? `${beatCase} of ${deals}` : '—')}
-      </ul>`;
+      </ul>
+      <p class="advice-note">A game goes to you when your deal beat your case’s contents, or —
+      having refused every offer — your case matched or beat the best offer you turned down.</p>`;
   }
   els.statsModal.hidden = false;
 }
@@ -419,17 +481,25 @@ $('btn-offer-details').addEventListener('click', (e) => {
   e.target.textContent = open ? 'Hide the Advisor’s working ▴' : 'Show the Advisor’s working ▾';
 });
 
-els.riskToggle.addEventListener('click', (e) => {
-  const btn = e.target.closest('button[data-risk]');
-  if (!btn) return;
-  riskKey = btn.dataset.risk;
-  for (const b of els.riskToggle.querySelectorAll('button')) {
-    b.classList.toggle('active', b === btn);
+function setRisk(key) {
+  riskKey = key;
+  // Keep both toggles (side panel + offer modal) in sync.
+  for (const group of [els.riskToggle, $('offer-risk-toggle')]) {
+    for (const b of group.querySelectorAll('button')) {
+      b.classList.toggle('active', b.dataset.risk === key);
+    }
   }
   // Re-run whichever advice is on screen with the new risk profile.
   if (game.phase === GamePhase.OFFER) renderAdvisorForOffer();
   else if (game.phase === GamePhase.OPENING) renderAdvisorForOpening();
-});
+}
+
+for (const group of [els.riskToggle, $('offer-risk-toggle')]) {
+  group.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-risk]');
+    if (btn) setRisk(btn.dataset.risk);
+  });
+}
 
 /* ---------- PWA install prompt ---------- */
 

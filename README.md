@@ -51,9 +51,11 @@ probability of knocking out a $10,000+ value.
 
 1. **Expected value** of the remaining board vs the offer.
 2. **Certainty equivalent** under power utility *u(x) = x^ρ*, so risk appetite
-   is a dial (Cautious ρ=0.35 · Balanced ρ=0.6 · Bold ρ=1.0) rather than an
+   is a dial (Cautious ρ=0.3 · Balanced ρ=0.6 · Bold ρ=1.15) rather than an
    argument. $50,000 guaranteed is genuinely worth more than a coin flip on
-   $100,000 to most humans; ρ encodes how much more.
+   $100,000 to most humans; ρ encodes how much more. Bold is mildly
+   risk-seeking, so the three profiles produce visibly different deal
+   thresholds — shown in the Advisor's working as "Deal threshold".
 3. **Monte Carlo simulation** — 3,000 continuations of your exact board using
    the Banker's own offer curve, with a myopic stopping rule (bank any future
    offer that clears the risk-adjusted value of what's left). This yields:
@@ -79,8 +81,11 @@ icons/                generated PNG icons
 tools/make-icons.mjs  dependency-free PNG icon generator (node)
 ```
 
-Player stats (games, winnings, deals taken, deals that beat your case) persist
-locally via `localStorage` — nothing leaves your device.
+A running **You vs the Banker** scoreboard sits in the header: a game goes to
+you when your deal beat your case's contents, or — having refused every offer —
+your case matched or beat the best offer you turned down. Totals banked under
+each outcome are shown alongside. All stats persist locally via
+`localStorage` — nothing leaves your device.
 
 ## Research sources
 
